@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/">
+        <file>HTYDLNA.png</file>
+    </qresource>
+</RCC>
