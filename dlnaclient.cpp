@@ -7,24 +7,28 @@ DLNAClient::DLNAClient(QString s)
     QStringList SL = s.split("\r\n");
 
     foreach (QString s, SL) {
-        if (s.contains("LOCATION:")) {
-            QString surl = s.remove("LOCATION:").trimmed();
+        if (s.contains("LOCATION:", Qt::CaseInsensitive)) {
+            QString surl = s.remove("LOCATION:", Qt::CaseInsensitive).trimmed();
             qDebug() << surl;
             scheme = surl.left(surl.indexOf("://") + 3);
             //qDebug() << scheme;
             QString s0 = surl.mid(s.indexOf("://") + 2);
             qDebug() << s0;
-            QRegularExpression RE("([^:]*):([^/]*)/(.*)");
-            QRegularExpressionMatch REM = RE.match(s0);
-            IP = REM.captured(1);
-            port = REM.captured(2);
-            description = REM.captured(3);
-//                    IP = location.left(location.indexOf(":"));
-//                    port = location.mid(location.indexOf(":") + 1, location.indexOf("/") - location.indexOf(":") - 1);
-//                    description = location.right(location.length() - location.indexOf("/") - 1);
+//            QRegularExpression RE("([^:]*):([^/]*)/(.*)");
+//            QRegularExpressionMatch REM = RE.match(s0);
+//            IP = REM.captured(1);
+//            port = REM.captured(2);
+//            description = REM.captured(3);
+            IP = s0.left(s0.indexOf(":"));
+            port = s0.mid(s0.indexOf(":") + 1, s0.indexOf("/") - s0.indexOf(":") - 1);
+            description = s0.right(s0.length() - s0.indexOf("/") - 1);
             qDebug() << IP << port << description;
             QByteArray BA = getReply(surl);
-            QFile file(QFileInfo(surl).fileName());
+            QFile file;
+            if (description == "")
+                file.setFileName("description.xml");
+            else
+                file.setFileName(description);
             if (file.open(QFile::WriteOnly)) {
                 file.write(BA);
                 file.close();
@@ -102,18 +106,22 @@ QString DLNAClient::Desc()
 }
 
 QString DLNAClient::UploadFileToPlay(QString ControlURL, QString UrlToPlay)
-{
+{    
+    qDebug() << UrlToPlay;
     QString XML = "<?xml version=\"1.0\"?>\n"
                   "<SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\" SOAP-ENV:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n"
                   "<SOAP-ENV:Body>\n"
                   "<u:SetAVTransportURI xmlns:u=\"urn:schemas-upnp-org:service:AVTransport:1\">\n"
                   "<InstanceID>0</InstanceID>\n";
-    XML += "<CurrentURI>" + UrlToPlay.replace(" ", "%20") + "</CurrentURI>\n";
-    XML += "<CurrentURIMetaData></CurrentURIMetaData>\n";//" + Desc() + "
+    XML += "<CurrentURI>" + UrlToPlay + "</CurrentURI>\n";
+    XML += "<CurrentURIMetaData>" + Desc() + "</CurrentURIMetaData>\n";
     XML += "</u:SetAVTransportURI>\n";
     XML += "</SOAP-ENV:Body>\n"
            "</SOAP-ENV:Envelope>\n";
-    QString surl = scheme + IP + ":" + port + "/" + ControlURL;
+    QString surl = scheme + IP + ":" + port;
+    if (!ControlURL.startsWith("/"))
+        surl += "/";
+    surl += ControlURL;
     qDebug() << surl;
     return postReply(surl, XML);
 }

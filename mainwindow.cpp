@@ -2,6 +2,8 @@
 
 // https://github.com/sYCH3L/TwitchTVDLNAPlayer
 
+// https://breezetemple.github.io/2019/03/01/dlna-and-upnp-protocol/
+
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
@@ -17,9 +19,10 @@ MainWindow::MainWindow(QWidget *parent) :
 
     groupAddress = QHostAddress("239.255.255.250");
     socket = new QUdpSocket(this);
-    auto ok = socket->bind(QHostAddress::AnyIPv4, 2068, QUdpSocket::ShareAddress);
+    auto ok = socket->bind(QHostAddress::AnyIPv4, 8081, QUdpSocket::ShareAddress);
     connect(socket, SIGNAL(readyRead()), this, SLOT(readMsg()));
     if (!ok) {
+        ui->statusBar->showMessage("Bind failed!");
         return;
     }
 
@@ -73,7 +76,7 @@ void MainWindow::on_pushButton_discover_clicked()
                   //"ST: ssdp:all\r\n"
                   //"ST: upnp:rootdevice\r\n"
                   "ST: urn:schemas-upnp-org:service:AVTransport:1\r\n"  //投屏
-                  "Man: \"ssdp:discover\"\r\n"
+                  "MAN: \"ssdp:discover\"\r\n"
                   "MX: 3\r\n"
                   "\r\n");
 
@@ -87,34 +90,28 @@ void MainWindow::on_pushButton_notify_clicked()
 {
     c = 0;
     intent = 1;
-/*
-    QString s = QString("NOTIFY * HTTP/1.1\r\n"
-                        "HOST: 239.255.255.250:1900\r\n"
-                        "ST: upnp:rootdevice\r\n"   //根设备
-                        "NTS: ssdp:alive\r\n"
-                        "LOCATION: %1:8000/description.xml\r\n"
-                        "USN: uuid:1234567890-abcdefg-hijklmn-opqrst-uvwxyz::upnp:rootdevice\r\n"
-                        "CACHE-CONTROL: max-age=300\r\n"
-                        "SERVER: %2 UPnP/1.0 %3/%4\r\n"
-                        "\r\n").arg(IP).arg(hostName).arg(qApp->applicationName()).arg(qApp->applicationVersion());
-    //qDebug() << s;
-    auto writeOk = socket->writeDatagram(s.toUtf8().data(), groupAddress, 1900);
-    if (writeOk == -1) {
-        qDebug() << "Writing Datagram failed";
-    }
-*/
-
     QString s = QString("NOTIFY * HTTP/1.1\r\n"
                 "HOST: 239.255.255.250:1900\r\n"
-                "ST: urn:schemas-upnp-org:service:AVTransport:1\r\n"
+                "NT: upnp:rootdevice\r\n"
                 "NTS: ssdp:alive\r\n"
-                "LOCATION: %1:8000/description.xml\r\n"
-                "USN: uuid:8fa440b3-f312-4415-8640-f790a3845fcf::urn:schemas-upnp-org:service:AVTransport:1\r\n"
+                "LOCATION: %1:8080/description.xml\r\n"
+                "USN: uuid:8fa440b3-f312-4415-8640-f790a3845fc1::upnp:rootdevice\r\n"
+                "CACHE-CONTROL: max-age=300\r\n"
+                "SERVER: %2 UPnP/1.0 %3/%4\r\n"
+                "\r\n").arg(IP).arg(hostName).arg(qApp->applicationName()).arg(qApp->applicationVersion());
+    auto writeOk = socket->writeDatagram(s.toUtf8().data(), groupAddress, 1900);
+
+    s = QString("NOTIFY * HTTP/1.1\r\n"
+                "HOST: 239.255.255.250:1900\r\n"
+                "NT: urn:schemas-upnp-org:service:AVTransport:1\r\n"
+                "NTS: ssdp:alive\r\n"
+                "LOCATION: %1:8080/description.xml\r\n"
+                "USN: uuid:8fa440b3-f312-4415-8640-f790a3845fc1::urn:schemas-upnp-org:service:AVTransport:1\r\n"
                 "CACHE-CONTROL: max-age=300\r\n"
                 "SERVER: %2 UPnP/1.0 %3/%4\r\n"
                 "\r\n").arg(IP).arg(hostName).arg(qApp->applicationName()).arg(qApp->applicationVersion());
     qDebug() << s;
-    auto writeOk = socket->writeDatagram(s.toUtf8().data(), groupAddress, 1900);
+    writeOk = socket->writeDatagram(s.toUtf8().data(), groupAddress, 1900);
     if (writeOk == -1) {
         qDebug() << "Writing Datagram failed";
     }
@@ -148,8 +145,7 @@ void MainWindow::tableWidget_contextMenu(const QPoint &point)
         if (result_action == action_copy) {
             QClipboard *clipboard = QApplication::clipboard();
             clipboard->setText(ui->tableWidget->item(row,0)->text() + "/" + ui->tableWidget->item(row,1)->text());         
-        } else if (result_action == action_play) {
-            //Macast可以，乐播不行
+        } else if (result_action == action_play) {            
             QString controlURL="";
             QList<QMap<QString,QString>> list_service = list_client.at(row)->list_service;
             for (int i=0; i<list_service.length(); i++) {
@@ -160,7 +156,17 @@ void MainWindow::tableWidget_contextMenu(const QPoint &point)
                     break;
                 }
             }
-            qDebug() << list_client.at(row)->UploadFileToPlay(controlURL, ui->lineEdit->text());
+            QString s = list_client.at(row)->UploadFileToPlay(controlURL, ui->lineEdit->text());
+            qDebug() << s;
+            QFile file;
+            if (controlURL == "")
+                file.setFileName("controlURL.xml");
+            else
+                file.setFileName(QFileInfo(controlURL).fileName());
+            if (file.open(QFile::WriteOnly)) {
+                file.write(s.toUtf8());
+                file.close();
+            }
         }
     }
 }

@@ -24,14 +24,14 @@
       <item>
        <widget class="QPushButton" name="pushButton_discover">
         <property name="text">
-         <string>发现</string>
+         <string>Discover</string>
         </property>
        </widget>
       </item>
       <item>
        <widget class="QPushButton" name="pushButton_notify">
         <property name="text">
-         <string>通报</string>
+         <string>Notify</string>
         </property>
        </widget>
       </item>
@@ -51,6 +51,9 @@
      <widget class="QTableWidget" name="tableWidget">
       <property name="contextMenuPolicy">
        <enum>Qt::CustomContextMenu</enum>
+      </property>
+      <property name="editTriggers">
+       <set>QAbstractItemView::NoEditTriggers</set>
       </property>
       <property name="columnCount">
        <number>3</number>
