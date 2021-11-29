@@ -28,7 +28,7 @@ private:
     QHostAddress groupAddress;
     QUdpSocket *socket;
     int c, intent;
-    QString hostName, IP;
+    QString hostName, IP, uuid;
     QList<DLNAClient*> list_client;
 
 private slots:

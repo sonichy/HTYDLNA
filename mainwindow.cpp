@@ -12,6 +12,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    uuid="afa440b3-f312-4415-8640-f790a3845fc1";
     QStringList header;
     header << "IP" << "Description" << "FriendlyName";
     ui->tableWidget->setHorizontalHeaderLabels(header);
@@ -19,7 +20,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     groupAddress = QHostAddress("239.255.255.250");
     socket = new QUdpSocket(this);
-    auto ok = socket->bind(QHostAddress::AnyIPv4, 8081, QUdpSocket::ShareAddress);
+    auto ok = socket->bind(QHostAddress::AnyIPv4, 8000, QUdpSocket::ShareAddress);
     connect(socket, SIGNAL(readyRead()), this, SLOT(readMsg()));
     if (!ok) {
         ui->statusBar->showMessage("Bind failed!");
@@ -73,10 +74,10 @@ void MainWindow::on_pushButton_discover_clicked()
     list_client.clear();
     QByteArray BA("M-SEARCH * HTTP/1.1\r\n"
                   "Host:239.255.255.250:1900\r\n"
+                  "MAN: \"ssdp:discover\"\r\n"
                   //"ST: ssdp:all\r\n"
                   //"ST: upnp:rootdevice\r\n"
                   "ST: urn:schemas-upnp-org:service:AVTransport:1\r\n"  //投屏
-                  "MAN: \"ssdp:discover\"\r\n"
                   "MX: 3\r\n"
                   "\r\n");
 
@@ -92,26 +93,52 @@ void MainWindow::on_pushButton_notify_clicked()
     intent = 1;
     QString s = QString("NOTIFY * HTTP/1.1\r\n"
                 "HOST: 239.255.255.250:1900\r\n"
-                "NT: upnp:rootdevice\r\n"
                 "NTS: ssdp:alive\r\n"
-                "LOCATION: %1:8080/description.xml\r\n"
-                "USN: uuid:8fa440b3-f312-4415-8640-f790a3845fc1::upnp:rootdevice\r\n"
+                "NT: upnp:rootdevice\r\n"
+                "USN: uuid:%1::upnp:rootdevice\r\n"
+                "LOCATION: %2:8000/description.xml\r\n"
                 "CACHE-CONTROL: max-age=300\r\n"
-                "SERVER: %2 UPnP/1.0 %3/%4\r\n"
-                "\r\n").arg(IP).arg(hostName).arg(qApp->applicationName()).arg(qApp->applicationVersion());
+                "SERVER: %3 UPnP/1.0 %4/%5\r\n"
+                "\r\n").arg(uuid).arg(IP).arg(hostName).arg(qApp->applicationName()).arg(qApp->applicationVersion());
+    qDebug() << s;
     auto writeOk = socket->writeDatagram(s.toUtf8().data(), groupAddress, 1900);
 
     s = QString("NOTIFY * HTTP/1.1\r\n"
                 "HOST: 239.255.255.250:1900\r\n"
-                "NT: urn:schemas-upnp-org:service:AVTransport:1\r\n"
                 "NTS: ssdp:alive\r\n"
-                "LOCATION: %1:8080/description.xml\r\n"
-                "USN: uuid:8fa440b3-f312-4415-8640-f790a3845fc1::urn:schemas-upnp-org:service:AVTransport:1\r\n"
+                "NT: uuid:%1\r\n"
+                "USN: uuid:%1\r\n"
+                "LOCATION: %2:8000/description.xml\r\n"
                 "CACHE-CONTROL: max-age=300\r\n"
-                "SERVER: %2 UPnP/1.0 %3/%4\r\n"
-                "\r\n").arg(IP).arg(hostName).arg(qApp->applicationName()).arg(qApp->applicationVersion());
+                "SERVER: %3 UPnP/1.0 %4/%5\r\n"
+                "\r\n").arg(uuid).arg(IP).arg(hostName).arg(qApp->applicationName()).arg(qApp->applicationVersion());
     qDebug() << s;
     writeOk = socket->writeDatagram(s.toUtf8().data(), groupAddress, 1900);
+
+    s = QString("NOTIFY * HTTP/1.1\r\n"
+                "HOST: 239.255.255.250:1900\r\n"
+                "NTS: ssdp:alive\r\n"
+                "NT: urn:schemas-upnp-org:device:MediaRenderer:1\r\n"
+                "USN: uuid:%1::urn:schemas-upnp-org:device:MediaRenderer:1\r\n"
+                "LOCATION: %2:8000/description.xml\r\n"
+                "CACHE-CONTROL: max-age=300\r\n"
+                "SERVER: %3 UPnP/1.0 %4/%5\r\n"
+                "\r\n").arg(uuid).arg(IP).arg(hostName).arg(qApp->applicationName()).arg(qApp->applicationVersion());
+    qDebug() << s;
+    writeOk = socket->writeDatagram(s.toUtf8().data(), groupAddress, 1900);
+
+    s = QString("NOTIFY * HTTP/1.1\r\n"
+                "HOST: 239.255.255.250:1900\r\n"
+                "NTS: ssdp:alive\r\n"
+                "NT: urn:schemas-upnp-org:service:AVTransport:1\r\n"
+                "USN: uuid:%1::urn:schemas-upnp-org:service:AVTransport:1\r\n"
+                "LOCATION: %2:8000/description.xml\r\n"
+                "CACHE-CONTROL: max-age=300\r\n"
+                "SERVER: %3 UPnP/1.0 %4/%5\r\n"
+                "\r\n").arg(uuid).arg(IP).arg(hostName).arg(qApp->applicationName()).arg(qApp->applicationVersion());
+    qDebug() << s;
+    writeOk = socket->writeDatagram(s.toUtf8().data(), groupAddress, 1900);
+
     if (writeOk == -1) {
         qDebug() << "Writing Datagram failed";
     }

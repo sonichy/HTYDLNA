@@ -11,7 +11,7 @@ DLNAClient::DLNAClient(QString s)
             QString surl = s.remove("LOCATION:", Qt::CaseInsensitive).trimmed();
             qDebug() << surl;
             scheme = surl.left(surl.indexOf("://") + 3);
-            //qDebug() << scheme;
+            qDebug() << scheme;
             QString s0 = surl.mid(s.indexOf("://") + 2);
             qDebug() << s0;
 //            QRegularExpression RE("([^:]*):([^/]*)/(.*)");
@@ -57,7 +57,7 @@ QByteArray DLNAClient::postReply(QString surl, QString spost)
     QNetworkRequest request;
     request.setUrl(QUrl(surl));
     request.setHeader(QNetworkRequest::ContentTypeHeader, "text/xml; charset=\"utf-8\"");
-    request.setRawHeader("SOAPAction", "urn:schemas-upnp-org:service:AVTransport:1#SetAVTransportURI");
+    request.setRawHeader("SOAPAction", "\"urn:schemas-upnp-org:service:AVTransport:1#SetAVTransportURI\"");
     QByteArray BA_post;
     BA_post.append(spost.toUtf8());
     QNetworkReply *reply = NAM->post(request, BA_post);
@@ -114,10 +114,10 @@ QString DLNAClient::UploadFileToPlay(QString ControlURL, QString UrlToPlay)
                   "<u:SetAVTransportURI xmlns:u=\"urn:schemas-upnp-org:service:AVTransport:1\">\n"
                   "<InstanceID>0</InstanceID>\n";
     XML += "<CurrentURI>" + UrlToPlay + "</CurrentURI>\n";
-    XML += "<CurrentURIMetaData>" + Desc() + "</CurrentURIMetaData>\n";
+    XML += "<CurrentURIMetaData></CurrentURIMetaData>\n";//" + Desc() + "
     XML += "</u:SetAVTransportURI>\n";
     XML += "</SOAP-ENV:Body>\n"
-           "</SOAP-ENV:Envelope>\n";
+           "</SOAP-ENV:Envelope>";
     QString surl = scheme + IP + ":" + port;
     if (!ControlURL.startsWith("/"))
         surl += "/";
