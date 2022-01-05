@@ -6,9 +6,11 @@ A mini DLNA sender, can not receive yet.
 | Soft | Pass | Status |
 |:----:|:----:|:----:|
 | [Macast](https://github.com/xfangfang/Macast) | V | Fast |
-| [极光TV](https://tv.qq.com/) | V | Fast |
+| [极光TV](https://tv.qq.com) | V | Fast |
+| [奇异果TV](http://app.iqiyi.com/tv/player/) | V | Fast |
+| [酷喵](https://www.youku.com) | X ||
 | Kodi | X | Occasionally|
-| [恒星播放器](https://www.stellarplayer.com/) | X ||
+| [恒星播放器](https://www.stellarplayer.com) | X ||
 | [乐播](https://www.lebo.cn) | X | SDK |
 | Windows Media Player 12 | X ||
 | 小米电视 | X ||
